@@ -4,16 +4,22 @@ import json
 import re
 from openai import OpenAI
 import os
+import requests
 
 # Parameter Store
 ssm = boto3.client('ssm')
 PARAMETER_NAME = "/randomtweets/used_topics"
 OPENAI_API_KEY_PARAM = "/randomtweets/openai_api_key"
 
-CONSUMER_KEY_PARAM = "/randomtweets/xapi_consumer_key"
-CONSUMER_SECRET_PARAM = "/randomtweets/xapi_consumer_secret"
-ACCESS_TOKEN_PARAM = "/randomtweets/xapi_access_token"
-ACCESS_SECRET_PARAM = "/randomtweets/xapi_access_secret"
+# CONSUMER_KEY_PARAM = "/randomtweets/xapi_consumer_key"
+# CONSUMER_SECRET_PARAM = "/randomtweets/xapi_consumer_secret"
+# ACCESS_TOKEN_PARAM = "/randomtweets/xapi_access_token"
+# ACCESS_SECRET_PARAM = "/randomtweets/xapi_access_secret"
+
+CONSUMER_KEY_PARAM = os.environ.get('CONSUMER_KEY_PARAM')
+CONSUMER_SECRET_PARAM = os.environ.get('CONSUMER_SECRET_PARAM')
+ACCESS_TOKEN_PARAM = os.environ.get('ACCESS_TOKEN_PARAM')
+ACCESS_SECRET_PARAM = os.environ.get('ACCESS_SECRET_PARAM')
 
 def get_parameter(name):
     response = ssm.get_parameter(Name=name, WithDecryption=True)
@@ -46,14 +52,30 @@ def manage_used_topics(new_topic, used_topics):
             used_topics.pop(0)
         save_used_topics(used_topics)
 
+def get_random_words(how_many = 10):
+    url = "https://random-word-api.herokuapp.com/word"
+    params = {
+        'number': how_many,
+        'lang': 'en'
+    }
+    response = requests.get(url, params=params)
+    
+    if response.status_code == 200:
+        words = response.json()
+        return ', '.join(words)
+    else:
+        return "No random words today, make something up!"
+
+random_words = get_random_words()
+
 # Generate posts
-def generate_random_fact_for_twitter():
+def generate_random_fact_for_twitter(random_words):
     
     os.environ['OPENAI_API_KEY'] = get_parameter(OPENAI_API_KEY_PARAM)
     used_topics = get_used_topics()
-    prompt= f"""You are an AI that provides random interesting facts suitable for Twitter posts. Generate an interesting and little-known fact. 
+    prompt= f"""You are an AI that provides random interesting facts suitable for Twitter posts. Generate an interesting and little-known fact related to one of the following: {random_words}. 
         The fact should be concise, informative, and fit within the character limit for a tweet (280 characters). Don't use hashtags. Don't start with 'Did you know'. 
-        Avoid repeating topics already covered in the following facts: {', '.join(used_topics)}.
+        Try to make it different from previous facts: {', '.join(used_topics)}.
         """
     print(prompt)
     
@@ -80,10 +102,10 @@ def generate_random_fact_for_twitter():
 
 def lambda_handler(event, context):
     
-    consumer_key = get_parameter(CONSUMER_KEY_PARAM)
-    consumer_secret = get_parameter(CONSUMER_SECRET_PARAM)
-    access_token = get_parameter(ACCESS_TOKEN_PARAM)
-    access_token_secret = get_parameter(ACCESS_SECRET_PARAM)
+    consumer_key = CONSUMER_KEY_PARAM
+    consumer_secret = CONSUMER_SECRET_PARAM
+    access_token = ACCESS_TOKEN_PARAM
+    access_token_secret = ACCESS_SECRET_PARAM
 
     payload = {"text": generate_random_fact_for_twitter()}
 
