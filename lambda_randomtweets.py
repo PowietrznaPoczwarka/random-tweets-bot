@@ -89,7 +89,7 @@ def generate_random_fact_for_twitter(random_words):
                 "content": prompt
             }
         ],
-        model = "gpt-4o",
+        model = "gpt-4o-mini",
         n=1
     )
     
