@@ -58,8 +58,8 @@ def generate_news_summary():
     used_topics = get_used_topics()
     output_string = get_news()
     
-    prompt= f"""You are an AI that summarizes news. Choose the most important piece (or pieces) of news from those listed below and summarize it to a tweet format. 
-        Be very concise and fit within the character limit for a tweet (280 characters) - Max 2/3 sentences. Don't use hashtags.
+    prompt= f"""You are an AI that summarizes news. Choose the most important piece (or pieces) of news from those listed below and summarize it to a tweet format. Use max 1 hashtag - keep in mind it can make a tweet longer. 
+        Be very concise and fit within the character limit for a tweet (280 characters) - Max 2/3 sentences.
         Here are the news pieces:
         {output_string}
         Avoid repeating topics already covered recently: {', '.join(used_topics)}. If it's impossible to tweet something new write an interesting fact about politics.
