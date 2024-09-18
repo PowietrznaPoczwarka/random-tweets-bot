@@ -11,11 +11,6 @@ ssm = boto3.client('ssm')
 PARAMETER_NAME = "/randomtweets/used_topics"
 OPENAI_API_KEY_PARAM = "/randomtweets/openai_api_key"
 
-# CONSUMER_KEY_PARAM = "/randomtweets/xapi_consumer_key"
-# CONSUMER_SECRET_PARAM = "/randomtweets/xapi_consumer_secret"
-# ACCESS_TOKEN_PARAM = "/randomtweets/xapi_access_token"
-# ACCESS_SECRET_PARAM = "/randomtweets/xapi_access_secret"
-
 CONSUMER_KEY_PARAM = os.environ.get('CONSUMER_KEY_PARAM')
 CONSUMER_SECRET_PARAM = os.environ.get('CONSUMER_SECRET_PARAM')
 ACCESS_TOKEN_PARAM = os.environ.get('ACCESS_TOKEN_PARAM')

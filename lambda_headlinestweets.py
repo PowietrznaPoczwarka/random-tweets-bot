@@ -5,11 +5,34 @@ import re
 from openai import OpenAI
 import os
 import requests
+from bs4 import BeautifulSoup
+
+import logging
+logging.basicConfig(level=logging.INFO)
 
 # Ustawienia Parameter Store
 ssm = boto3.client('ssm')
 PARAMETER_NAME = "/randomtweets/news_history"
 OPENAI_API_KEY_PARAM = "/randomtweets/openai_api_key"
+
+def get_trends():
+    try:
+        url = "https://trends24.in/"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "html.parser")
+        trend_elements = soup.find_all(class_="trend-link")
+        
+        trends = set()
+        for element in trend_elements:
+            if len(trends) < 10:
+                text = element.get_text(strip=True)
+                trends.add(text)
+    
+        unique_trends = list(trends)[:10]
+        return str(unique_trends)
+    except Exception as e:
+        print(e)
+        return ''
 
 def get_parameter(name):
     response = ssm.get_parameter(Name=name, WithDecryption=True)
@@ -57,12 +80,14 @@ def generate_news_summary():
     
     used_topics = get_used_topics()
     output_string = get_news()
+    trends = get_trends()
     
-    prompt= f"""You are an AI that summarizes news. Choose the most important piece (or pieces) of news from those listed below and summarize it to a tweet format. Use max 1 hashtag - keep in mind it can make a tweet longer. 
-        Be very concise and fit within the character limit for a tweet (280 characters) - Max 2/3 sentences.
+    prompt= f"""You are an AI that summarizes news. Choose the most important piece of news from those listed below and summarize it to a tweet format. 
+        If possible, try to find a piece of news that matches one of the trending topics: {trends}.
+        Use max 1 hashtag - keep in mind it can make a tweet longer. Be very concise and fit within the character limit for a tweet (280 characters) - Max 2/3 sentences.
         Here are the news pieces:
         {output_string}
-        Avoid repeating topics already covered recently: {', '.join(used_topics)}. If it's impossible to tweet something new write an interesting fact about politics.
+        Avoid repeating (or similar!) topics already covered recently: {', '.join(used_topics)}. If it's impossible to tweet something new write an interesting fact about politics.
         """
     print(prompt)
     
